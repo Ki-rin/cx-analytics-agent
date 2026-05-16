@@ -7,7 +7,6 @@ from langchain_core.messages import AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
-from langgraph.graph.graph import CompiledGraph
 
 from agent.state import AgentState
 from agent.tools import ALL_TOOLS
@@ -241,7 +240,7 @@ def should_continue_unstructured(
 # ---------------------------------------------------------------------------
 
 
-def build_graph(checkpointer: Any) -> CompiledGraph:
+def build_graph(checkpointer: Any) -> StateGraph:
     """Build and compile the full LangGraph ReAct agent graph.
 
     The graph has three distinct paths after the router:
