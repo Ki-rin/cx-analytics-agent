@@ -3,6 +3,9 @@
 import uuid
 from typing import Any
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 from langchain_core.messages import AIMessage, ToolMessage
 

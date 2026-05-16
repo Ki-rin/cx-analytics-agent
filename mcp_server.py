@@ -1,5 +1,8 @@
 """FastMCP server exposing Bitext dataset tools over the Model Context Protocol."""
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastmcp import FastMCP
 
 from agent.tools import (

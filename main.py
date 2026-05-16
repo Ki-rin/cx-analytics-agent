@@ -4,6 +4,9 @@
 import argparse
 import sys
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from langchain_core.messages import AIMessage, ToolMessage
 
 from agent.graph import build_graph
