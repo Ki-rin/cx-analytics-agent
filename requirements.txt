@@ -1,0 +1,12 @@
+langchain==0.3.25
+langchain-openai==0.3.19
+langgraph==0.4.5
+langchain-community==0.3.24
+fastmcp==2.3.4
+datasets==3.6.0
+pandas==2.2.3
+pydantic==2.11.4
+streamlit==1.45.1
+sqlalchemy==2.0.40
+aiosqlite==0.20.0
+python-dotenv==1.1.0
