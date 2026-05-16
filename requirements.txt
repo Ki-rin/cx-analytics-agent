@@ -1,6 +1,6 @@
 langchain==0.3.25
 langchain-openai==0.3.19
-langgraph==0.4.5
+langgraph==1.0.10rc1
 langchain-community==0.3.24
 fastmcp==2.3.4
 datasets==3.6.0
