@@ -1,101 +1,111 @@
 # CX Analytics Agent
 
-A **LangGraph ReAct agent** that answers questions about the [Bitext Customer Service](https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset) dataset.  Structured queries, open-ended summaries, and out-of-scope filtering — all in one CLI, Streamlit UI, and MCP server.
+A **LangGraph ReAct agent** that answers natural-language questions about the
+[Bitext Customer Service](https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset)
+dataset. Supports structured queries, open-ended summaries, and out-of-scope filtering,
+with persistent memory, a FastMCP server, and a Streamlit UI.
 
 ---
 
-## 1. Overview
+## Architecture
 
-The agent lets you explore the Bitext customer support LLM chatbot training dataset using natural language. It can:
+### Graph
 
-- List categories and intents in the dataset
-- Count records with optional filters
-- Show example customer queries and agent responses
-- Display intent distributions within a category
-- Generate qualitative summaries of a category
-- Suggest the next interesting query to run (query recommender)
+```
+                      ┌─────────────┐
+          User ──────▶│ router_node │
+                      └──────┬──────┘
+           ┌──────────────────┼──────────────────┐
+           ▼                  ▼                  ▼
+   out_of_scope_node      call_model        summarize_node
+   (polite refusal)    (structured ReAct)  (unstructured ReAct)
+           │                  │  ▲               │  ▲
+           │            tools?│  │         tools?│  │
+           │                  ▼  │               ▼  │
+           │              call_tools ◀───────call_tools
+           │                  │                  │
+           └──────────────────▼──────────────────┘
+                       update_profile_node
+                              │
+                             END
+```
 
----
+The **router** (small model, one-word output) classifies every message as:
+- `structured` — data query (counts, filters, examples) → `call_model` ReAct loop
+- `unstructured` — open-ended narrative / summary → `summarize_node` ReAct loop
+- `out_of_scope` — unrelated to the dataset → polite refusal
 
-## 2. Architecture
+Both ReAct loops share the same `call_tools` node but use different system prompts.
+A hard cap of **12 iterations** prevents infinite loops; if hit, the agent returns
+a graceful fallback message.
 
 ### Models
 
 | Role | Model | Why |
 |------|-------|-----|
-| Query routing | `google/gemma-2-9b-it-fast` | Fast, low-latency classification; only needs to output one word |
-| Reasoning & generation | `Qwen/Qwen3-30B-A3B-Instruct` | Strong instruction-following and tool-use for multi-step analysis |
-| Profile extraction | `google/gemma-2-9b-it-fast` | Lightweight JSON extraction from recent messages |
+| Query routing | `google/gemma-2-9b-it-fast` | Single-word classification only; fastest available small model on Nebius |
+| Reasoning & tool use | `Qwen/Qwen3-30B-A3B-Instruct` | Best-in-class instruction-following and multi-step tool chaining among Nebius Token Factory models; MoE architecture keeps latency reasonable despite large parameter count |
+| Profile extraction | `google/gemma-2-9b-it-fast` | Lightweight JSON extraction from recent messages; speed matters more than reasoning depth here |
 
-All models are served through the **Nebius Token Factory** OpenAI-compatible endpoint (`https://api.tokenfactory.nebius.com/v1/`).
+All models are served via the **Nebius Token Factory** OpenAI-compatible endpoint.
 
-### Graph (LangGraph ReAct)
+### Tools (7)
 
-```
-START → router_node → [dispatch]
-              ├─ out_of_scope → out_of_scope_node → END
-              └─ structured / unstructured → call_model ⇄ call_tools (ReAct loop, max 12 iters)
-                                                    └─ update_profile_node → END
-```
-
-**Router** uses the small model to classify every incoming message as one of:
-- `structured` — dataset query (counts, filters, examples)
-- `unstructured` — open-ended analysis or narrative question
-- `out_of_scope` — nothing to do with the dataset
-
-**ReAct loop** alternates between calling the LARGE_MODEL (with tools bound) and executing tool calls via LangGraph's `ToolNode`. The iteration counter prevents infinite loops (max 12 iterations).
-
-### Tools (7 total)
-
-| Tool | Description |
+| Tool | When to use |
 |------|-------------|
-| `list_categories` | List all unique top-level categories |
+| `list_categories` | Discover available top-level categories |
 | `list_intents` | List intents within a category |
-| `count_records` | Count records with optional category/intent filters |
-| `get_examples` | Return formatted example rows (supports category, intent, keyword filters) |
+| `count_records` | Count rows with optional category/intent filters |
+| `get_examples` | Fetch formatted example rows (category + intent + keyword filters) |
 | `get_intent_distribution` | Intent frequency table for a category |
-| `get_category_summary_data` | Fetch a sample for LLM-driven narrative summarisation |
-| `recommend_next_query` | Suggest a follow-up query without executing it (query recommender) |
+| `get_category_summary_data` | Pull a raw sample for LLM-driven narrative summaries |
+| `recommend_next_query` | Suggest a follow-up query without executing it (Bonus B) |
 
 ### Memory
 
-- **Episodic (conversation)**: `SqliteSaver` writes to `memory.db`; restored by `--session` ID across restarts.
-- **User profile**: Per-session JSON files in `profiles/`; the small LLM extracts facts (preferred categories, interests) after each turn and merges them with the existing profile.
+- **Episodic / conversation**: `SqliteSaver` writes the full message history to
+  `memory.db`. The same `--session` ID restores the conversation across restarts,
+  enabling follow-up queries like *"show 3 more"* (the agent sees prior tool calls
+  in its context and reuses the same filters).
+- **User profile**: After each turn the small LLM extracts distilled facts
+  (preferred categories, focus areas, etc.) and writes them to
+  `profiles/<session_id>.json`. These facts are injected into the system prompt
+  on the next turn. Answers *"What do you remember about me?"*.
 
 ---
 
-## 3. Setup
+## Setup
 
 ```bash
-# 1. Clone the repo
-git clone <repo-url>
+# 1. Clone
+git clone https://github.com/Ki-rin/cx-analytics-agent.git
 cd cx-analytics-agent
 
-# 2. Create and activate a virtual environment
+# 2. Virtual environment
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
+# 3. Dependencies
 pip install -r requirements.txt
 
-# 4. (Optional) set your API key via env var
-cp .env.example .env
-# Edit .env and set NEBIUS_API_KEY=your_key
-# The key is also hard-coded as a fallback, so this step is optional.
+# 4. API key  ← required
+export NEBIUS_API_KEY=your_nebius_token_factory_key
+# Or add it to a .env file:
+cp .env.example .env   # then edit .env
 ```
 
-The dataset is downloaded automatically from HuggingFace on first run (~25 MB).
+The dataset (~25 MB) is downloaded automatically from HuggingFace on first run.
 
 ---
 
-## 4. Running the CLI
+## Running the CLI
 
 ```bash
-python main.py                       # default session
-python main.py --session alice       # named session (persists across restarts)
+python main.py                        # default session
+python main.py --session alice        # named session — persists across restarts
 ```
 
-The CLI prints every tool call and observation so you can follow the agent's reasoning:
+The CLI prints every tool call and observation so you can follow the reasoning:
 
 ```
 You: How many refund requests did we get?
@@ -105,31 +115,49 @@ You: How many refund requests did we get?
 Assistant: There were **210 refund requests** in the dataset.
 ```
 
-Type `quit` to exit the loop.
+Type `quit` or `exit` to leave the session.
+
+### Session continuity example
+
+```
+# Session 1
+python main.py --session alice
+You: Show me 3 examples from the REFUND category
+...
+You: Show me 3 more
+# Agent reuses category=REFUND filter automatically
+
+# Restart — same session
+python main.py --session alice
+You: What about refunds vs complaints total?
+# Full history is restored from memory.db
+```
 
 ---
 
-## 5. MCP Server
+## MCP Server
 
 ```bash
 python mcp_server.py
 ```
 
-The server exposes 6 tools over stdio (standard MCP transport). To connect a client:
+The server speaks standard MCP over **stdio** and exposes 7 tools:
+`categories`, `intents`, `count`, `examples`, `intent_distribution`,
+`category_summary`, `suggest_next_query`.
 
-### Using the MCP Python client
+### Connecting a Python client
 
 ```python
+import asyncio
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-import asyncio
 
 async def main():
     params = StdioServerParameters(command="python", args=["mcp_server.py"])
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            # List available tools
+            # List tools
             tools = await session.list_tools()
             print([t.name for t in tools.tools])
             # Call a tool
@@ -139,30 +167,48 @@ async def main():
 asyncio.run(main())
 ```
 
-Available MCP tools: `categories`, `intents`, `count`, `examples`, `intent_distribution`, `category_summary`, `suggest_next_query`.
+### Claude Desktop / MCP client config
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cx-analytics": {
+      "command": "python",
+      "args": ["/absolute/path/to/cx-analytics-agent/mcp_server.py"],
+      "env": {
+        "NEBIUS_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
 
 ---
 
-## 6. Streamlit UI
+## Streamlit UI
 
 ```bash
 streamlit run app_streamlit.py
 ```
 
-Open your browser at `http://localhost:8501`. Features:
-- Chat interface with agent responses
-- Expandable "Reasoning steps" sections showing tool calls and observations
-- Session ID input in the sidebar to resume past conversations
+Open `http://localhost:8501`. Features:
+- Chat interface with streaming-style agent responses
+- Expandable **Reasoning steps** panel (tool calls + observations) per turn
+- Session ID input in the sidebar to switch between or resume conversations
+- Live user profile display
 
 ---
 
-## 7. Example Queries
+## Example Queries
 
 | Query | Type |
 |-------|------|
 | What categories exist in the dataset? | structured |
 | How many refund requests did we get? | structured |
 | Show me 5 examples of the SHIPPING category | structured |
+| Show me 3 more | structured (uses last_filters) |
 | What is the intent distribution in ACCOUNT? | structured |
 | Summarise how agents respond to complaints | unstructured |
 | Show examples of people wanting their money back | structured |

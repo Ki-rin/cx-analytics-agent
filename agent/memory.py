@@ -9,10 +9,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 
-NEBIUS_API_KEY = os.environ.get(
-    "NEBIUS_API_KEY",
-    "v1.CmQKHHN0YXRpY2tleS1lMDB0YThnMzY1OXZ3YjFnN2ISIXNlcnZpY2VhY2NvdW50LWUwMHc2eWUzejI3OGtyNHI4ZDIMCMD53s4GEOXqsIEDOgwIv_z2mQcQwLSyogJAAloDZTAw.AAAAAAAAAAFJpUycOQhq_9Nymgej3qOlIyNjZRT-kkPIG3E1FLRwr0xL1xdk9oYiy8ekf7oZrvlPXCAYAijVYH9LcJLtEtoP",
-)
+NEBIUS_API_KEY = os.environ["NEBIUS_API_KEY"]
 SMALL_MODEL = "google/gemma-2-9b-it-fast"
 BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 

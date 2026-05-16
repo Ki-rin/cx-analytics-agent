@@ -23,3 +23,4 @@ class AgentState(TypedDict):
     iteration_count: int
     user_profile: dict
     pending_recommendation: Optional[str]
+    last_filters: dict  # last get_examples args; reused for "show more" follow-ups

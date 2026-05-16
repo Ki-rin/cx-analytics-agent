@@ -148,6 +148,7 @@ if user_input:
                     "query_type": "",
                     "user_profile": profile,
                     "pending_recommendation": None,
+                    "last_filters": {},
                 },
                 config,
                 stream_mode="values",
