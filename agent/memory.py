@@ -2,6 +2,7 @@
 
 import json
 import os
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -34,13 +35,19 @@ Reply with ONLY valid JSON. No explanation."""
 def get_checkpointer(db_path: str = "memory.db") -> SqliteSaver:
     """Create and return a SqliteSaver for persistent LangGraph checkpointing.
 
+    Uses a direct sqlite3 connection rather than the context-manager form of
+    ``from_conn_string`` so that the saver can be used outside a ``with`` block.
+    ``check_same_thread=False`` is required because LangGraph may access the
+    connection from multiple threads.
+
     Args:
         db_path: Path to the SQLite database file.
 
     Returns:
         A ``SqliteSaver`` instance connected to the specified database.
     """
-    return SqliteSaver.from_conn_string(db_path)
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    return SqliteSaver(conn)
 
 
 def load_user_profile(session_id: str) -> dict:
