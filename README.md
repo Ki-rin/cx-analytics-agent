@@ -43,9 +43,9 @@ a graceful fallback message.
 
 | Role | Model | Why |
 |------|-------|-----|
-| Query routing | `meta/meta-llama-3.1-8b-instruct` | Fast, lightweight; single-word classification requires minimal reasoning capacity |
-| Reasoning & tool use | `qwen/qwen3-30b-a3b-instruct-2507` | Strong instruction-following and multi-step tool chaining; MoE architecture keeps latency reasonable at 30B scale |
-| Profile extraction | `meta/meta-llama-3.1-8b-instruct` | Lightweight JSON extraction from recent messages; speed matters more than reasoning depth here |
+| Query routing | `Meta/Meta-Llama-3.1-8B-Instruct` | Fast, lightweight; single-word classification requires minimal reasoning capacity |
+| Reasoning & tool use | `Qwen/Qwen3-30B-A3B-Instruct-2507` | Strong instruction-following and multi-step tool chaining; MoE architecture keeps latency reasonable at 30B scale |
+| Profile extraction | `Meta/Meta-Llama-3.1-8B-Instruct` | Lightweight JSON extraction from recent messages; speed matters more than reasoning depth here |
 
 All models are served via the **Nebius Token Factory** OpenAI-compatible endpoint.
 

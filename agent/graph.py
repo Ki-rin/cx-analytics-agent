@@ -18,8 +18,8 @@ from agent.memory import update_profile_from_conversation
 # ---------------------------------------------------------------------------
 
 NEBIUS_API_KEY = os.environ["NEBIUS_API_KEY"]
-LARGE_MODEL = "qwen/qwen3-30b-a3b-instruct-2507"
-SMALL_MODEL = "meta/meta-llama-3.1-8b-instruct"
+LARGE_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+SMALL_MODEL = "Meta/Meta-Llama-3.1-8B-Instruct"
 BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 MAX_ITERATIONS = 12
 
