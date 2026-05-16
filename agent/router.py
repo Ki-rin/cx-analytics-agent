@@ -7,7 +7,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from agent.state import AgentState
 
 NEBIUS_API_KEY = os.environ["NEBIUS_API_KEY"]
-SMALL_MODEL = "google/gemma-2-9b-it-fast"
+SMALL_MODEL = "meta/meta-llama-3.1-8b-instruct"
 BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 
 ROUTER_SYSTEM_PROMPT = """You are a query classifier for a Customer Service Data Analyst system.

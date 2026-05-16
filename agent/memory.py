@@ -11,7 +11,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 NEBIUS_API_KEY = os.environ["NEBIUS_API_KEY"]
-SMALL_MODEL = "google/gemma-2-9b-it-fast"
+SMALL_MODEL = "meta/meta-llama-3.1-8b-instruct"
 BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 
 PROFILES_DIR = Path("profiles")

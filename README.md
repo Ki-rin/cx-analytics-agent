@@ -43,9 +43,9 @@ a graceful fallback message.
 
 | Role | Model | Why |
 |------|-------|-----|
-| Query routing | `google/gemma-2-9b-it-fast` | Single-word classification only; fastest available small model on Nebius |
-| Reasoning & tool use | `Qwen/Qwen3-30B-A3B-Instruct` | Best-in-class instruction-following and multi-step tool chaining among Nebius Token Factory models; MoE architecture keeps latency reasonable despite large parameter count |
-| Profile extraction | `google/gemma-2-9b-it-fast` | Lightweight JSON extraction from recent messages; speed matters more than reasoning depth here |
+| Query routing | `meta/meta-llama-3.1-8b-instruct` | Fast, lightweight; single-word classification requires minimal reasoning capacity |
+| Reasoning & tool use | `qwen/qwen3-30b-a3b-instruct-2507` | Strong instruction-following and multi-step tool chaining; MoE architecture keeps latency reasonable at 30B scale |
+| Profile extraction | `meta/meta-llama-3.1-8b-instruct` | Lightweight JSON extraction from recent messages; speed matters more than reasoning depth here |
 
 All models are served via the **Nebius Token Factory** OpenAI-compatible endpoint.
 
