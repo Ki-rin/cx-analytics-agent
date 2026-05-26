@@ -1,7 +1,7 @@
 langchain==0.3.25
 langchain-openai==0.3.19
 langgraph==0.2.73
-langgraph-checkpoint-sqlite==2.0.10
+langgraph-checkpoint-sqlite==3.0.1
 langchain-community==0.3.24
 fastmcp==2.3.4
 datasets==3.6.0
